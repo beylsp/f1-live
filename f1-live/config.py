@@ -19,7 +19,7 @@ def get_credentials():
     error) the email address and password shall be asked (again) and saved.
 
     @return: email address and password.
-    @rtype: C{tuple}
+    @rtype: C{tuple}.
     """
     try:
         config = dict(line.strip().split('=', 1) for line in open(CONFIG_FILE))
