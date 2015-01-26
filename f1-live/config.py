@@ -52,10 +52,10 @@ def store_credentials(email, password):
 def hint():
     """hints why credentials are needed."""
     print
-    print "In order to connect to the Live Timing stream, \
-           you need to be registered."
-    print "if you've not yet done so, \
-           do so now by filling out the registration form at the URL:"
+    print "In order to connect to the Live Timing stream, " + \
+          "you need to be registered."
+    print "if you've not yet done so, " + \
+          "do so now by filling out the registration form at the URL:"
     print "http://www.formula1.com/reg/registration"
     print
 
