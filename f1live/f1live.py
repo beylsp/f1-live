@@ -20,7 +20,7 @@ def login(credentials):
     email, password = credentials
     response = http.post(url='http://{0}/reg/login'.format(SERVER),
                   data={'email': email, 'password': password},
-                  headers={'User-Agent':__name__,
+                  headers={'User-Agent': __name__,
                            'Content-Type': 'application/x-www-form-urlencoded'})
     if response.get_status_code() != 302:
         raise LoginError("Login failed!")
