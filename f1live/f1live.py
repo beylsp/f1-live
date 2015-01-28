@@ -31,6 +31,8 @@ def main():
     """start eventloop."""
     try:
         user = login(config.get_credentials())
+        if not user:
+            raise LoginError("Invalid user cookie!")
         twisted.internet.reactor.connectTCP(SERVER, 4321,
                            streaming.StreamingClientFactory(user))
     except LoginError as err:
