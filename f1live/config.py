@@ -51,7 +51,7 @@ def store_credentials(email, password):
         sys.exit(1)
 
 def remove_credentials():
-    """"removes credentials file"""
+    """"removes credentials file."""
     try:
         os.remove(CONFIG_FILE)
     except IOError as err:
