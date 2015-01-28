@@ -3,6 +3,7 @@ Config file parsing and creation.
 """
 import logging
 import sys
+import os
 from pytools.cli import ask
 
 __all__ = ['get_credentials']
@@ -45,6 +46,14 @@ def store_credentials(email, password):
         with open(CONFIG_FILE, 'w') as _file:
             _file.write('{0}={1}\n'.format(EMAIL, email))
             _file.write('{0}={1}\n'.format(PASSWORD, password))
+    except IOError as err:
+        print str(err)
+        sys.exit(1)
+
+def remove_credentials():
+    """"removes credentials file"""
+    try:
+        os.remove(CONFIG_FILE)
     except IOError as err:
         print str(err)
         sys.exit(1)
