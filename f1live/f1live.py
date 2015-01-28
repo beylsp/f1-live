@@ -4,6 +4,7 @@ F1 live timing client.
 import logging
 import sys
 import twisted
+import httplib
 from f1live import config
 from f1live import http
 from f1live import streaming
@@ -22,7 +23,7 @@ def login(credentials):
                   data={'email': email, 'password': password},
                   headers={'User-Agent': __name__,
                            'Content-Type': 'application/x-www-form-urlencoded'})
-    if response.get_status_code() != 302:
+    if response.get_status_code() != httplib.FOUND: # 302
         raise LoginError("Login failed!")
     return response.get_cookie('USER')
 
