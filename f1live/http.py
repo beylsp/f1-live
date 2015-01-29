@@ -52,10 +52,6 @@ def on_http_response(response, defer):
     """callback function when http response is received."""
     return response.deliverBody(HttpBodyConsumer(response.length, defer))
 
-def on_http_error():
-    """error callback function."""
-    pass
-
 def get(url, **kwargs):
     """
     Do an http GET request.
