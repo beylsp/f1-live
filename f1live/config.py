@@ -6,7 +6,7 @@ import sys
 import os
 from pytools.cli import ask
 
-__all__ = ['get_credentials']
+__all__ = ['get_credentials', 'remove_credentials']
 
 _LOGGER = logging.getLogger(__name__)
 
