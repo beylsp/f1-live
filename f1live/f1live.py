@@ -7,6 +7,7 @@ import httplib
 import config
 import http
 import streaming
+from crypto import Crypto
 from twisted.internet import reactor
 
 _LOGGER = logging.getLogger(__name__)
@@ -29,11 +30,12 @@ def login(credentials):
 def main():
     """start eventloop."""
     try:
-        user = login(config.get_credentials())
-        if not user:
-            raise LoginError("Invalid user cookie!")
+        user_token = login(config.get_credentials())
+        if not user_token:
+            raise LoginError("Invalid user token cookie!")
+        Crypto.set_user_token(user_token)
         reactor.connectTCP(http.F1_LIVE_SERVER, 4321,
-                           streaming.StreamingClientFactory(user))
+                           streaming.StreamingClientFactory())
     except LoginError as err:
         print str(err) + " Please try again."
         config.remove_credentials()
