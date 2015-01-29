@@ -30,11 +30,11 @@ def request(method, url,
             url = "{0}?{1}".format(url, urlencode(params))
         if data:
             data = urlencode(data)
-        response, _ = Http().request(url, method.upper(),
+        response, content = Http().request(url, method.upper(),
                                      data, headers)
     except (ServerNotFoundError, socket.error) as err:
         raise ConnectionError(str(err))
-    return Response(response)
+    return Response(response, content)
 
 def request_async(defer, method, url,
              params=None,
@@ -108,7 +108,8 @@ def post_async(defer, url, data=None, **kwargs):
 
 class Response(object):
     """http response object."""
-    def __init__(self, response):
+    def __init__(self, response, content):
+        self.content = content
         self.status_code = int(response['status'])
         self.cookies = dict()
         try:
@@ -142,6 +143,14 @@ class Response(object):
         except KeyError:
             return None
 
+    def get_content(self):
+        """
+        Returns the http response content.
+
+        @return: http response content.
+        @rtype: C{string}.
+        """
+        return self.content
 
 class HttpBodyConsumer(Protocol):
     """asynchronous http response consumer."""
