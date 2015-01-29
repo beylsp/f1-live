@@ -6,8 +6,15 @@ from httplib2 import Http
 from httplib2 import ServerNotFoundError
 from urllib import urlencode
 from Cookie import BaseCookie
+from StringIO import StringIO
+from twisted.internet import reactor
+from twisted.web.client import Agent
+from twisted.web.client import FileBodyProducer
+from twisted.internet.protocol import Protocol
 
-__all__ = ['get', 'post']
+__all__ = ['get', 'get_async', 'post', 'post_async']
+
+F1_LIVE_SERVER = 'live-timing.formula1.com'
 
 class ConnectionError(Exception):
     """connection error exception."""
@@ -21,11 +28,33 @@ def request(method, url,
     try:
         if params:
             url = "{0}?{1}".format(url, urlencode(params))
+        if data:
+            data = urlencode(data)
         response, _ = Http().request(url, method.upper(),
-                                     urlencode(data), headers)
+                                     data, headers)
     except (ServerNotFoundError, socket.error) as err:
         raise ConnectionError(str(err))
     return Response(response)
+
+def request_async(defer, method, url,
+             params=None,
+             data=None,
+             headers=None):
+    """do an asynchronous http request."""
+    if params:
+        url = "{0}?{1}".format(url, urlencode(params))
+    if data:
+        data = FileBodyProducer(StringIO(urlencode(data)))
+    _defer = Agent(reactor).request(method.upper(), url, headers, data)
+    _defer.addCallback(on_http_response, defer)
+
+def on_http_response(response, defer):
+    """callback function when http response is received."""
+    return response.deliverBody(HttpBodyConsumer(response.length, defer))
+
+def on_http_error():
+    """error callback function."""
+    pass
 
 def get(url, **kwargs):
     """
@@ -40,6 +69,20 @@ def get(url, **kwargs):
     """
     return request('get', url, **kwargs)
 
+def get_async(defer, url, **kwargs):
+    """
+    Do an asynchronous http GET request.
+
+    @param defer: deferred object with callback functions to be called
+                  when http response is received.
+    @type defer: C{Deferred}.
+    @param url: http request url.
+    @type url: C{string}.
+    @param **kwargs: url request parameters as key-value pairs.
+    @type **kwargs: dict.
+    """
+    return request_async(defer, 'get', url, **kwargs)
+
 def post(url, data=None, **kwargs):
     """
     Do a http POST request.
@@ -52,6 +95,20 @@ def post(url, data=None, **kwargs):
     @rtype C{Response}.
     """
     return request('post', url, data=data, **kwargs)
+
+def post_async(defer, url, data=None, **kwargs):
+    """
+    Do an asynchronous http POST request.
+
+    @param defer: deferred object with callback functions to be called
+                  when http response is received.
+    @type defer: C{Deferred}.
+    @param url: http request url.
+    @type url: C{string}.
+    @param **kwargs: url request parameters as key-value pairs.
+    @type **kwargs: dict.
+    """
+    return request_async(defer, 'post', url, data=data, **kwargs)
 
 class Response(object):
     """http response object."""
@@ -88,4 +145,20 @@ class Response(object):
             return self.cookies[cookie.upper()]
         except KeyError:
             return None
+
+
+class HttpBodyConsumer(Protocol):
+    """asynchronous http response consumer."""
+    def __init__(self, length, finished):
+        self.remaining = length
+        self.finished = finished
+        self.body = ''
+
+    def dataReceived(self, data):
+        if self.remaining:
+            self.body += data[:self.remaining]
+            self.remaining -= len(data)
+
+    def connectionLost(self, reason):
+        self.finished.callback(self.body)
 
