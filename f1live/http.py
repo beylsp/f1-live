@@ -1,6 +1,7 @@
 """
 Simple HTTP requests library.
 """
+import logging
 import socket
 from httplib2 import Http
 from httplib2 import ServerNotFoundError
@@ -13,6 +14,8 @@ from twisted.web.client import FileBodyProducer
 from twisted.internet.protocol import Protocol
 
 __all__ = ['get', 'get_async', 'post', 'post_async']
+
+_LOGGER = logging.getLogger(__name__)
 
 F1_LIVE_SERVER = 'live-timing.formula1.com'
 
@@ -30,6 +33,7 @@ def request(method, url,
             url = "{0}?{1}".format(url, urlencode(params))
         if data:
             data = urlencode(data)
+        _LOGGER.debug("[{0}] {1}".format(method.upper(), url))
         response, content = Http().request(url, method.upper(),
                                      data, headers)
     except (ServerNotFoundError, socket.error) as err:
@@ -45,6 +49,7 @@ def request_async(defer, method, url,
         url = "{0}?{1}".format(url, urlencode(params))
     if data:
         data = FileBodyProducer(StringIO(urlencode(data)))
+    _LOGGER.debug("[async {0}] {1}".format(method.upper(), url))
     _defer = Agent(reactor).request(method.upper(), url, headers, data)
     _defer.addCallback(on_http_response, defer)
 
