@@ -6,6 +6,7 @@ import Packet
 import http
 import db
 from twisted.internet.protocol import Protocol
+from twisted.protocols.policies import TimeoutMixin
 from twisted.internet.protocol import ClientFactory
 from twisted.internet.defer import Deferred
 from pytools.dump import hexdump
@@ -14,7 +15,9 @@ __all__ = ['StreamingClientFactory']
 
 _LOGGER = logging.getLogger(__name__)
 
-class StreamingClientProtocol(Protocol):
+POLL_REQUEST = '\x10'
+
+class StreamingClientProtocol(Protocol, TimeoutMixin):
     """streaming client protocol implementation."""
     def __init__(self):
         self.data = ''
@@ -25,6 +28,8 @@ class StreamingClientProtocol(Protocol):
         defer.addCallback(self.keyframeReceived)
         http.get_async(defer, 'http://{0}/keyframe_{1:0>5d}.bin'
                         .format(http.F1_LIVE_SERVER, packet.key_frame_id))
+        # start polling if no activity after 1 second
+        self.setTimeout(1)
 
     def update_state(self, packet):
         """update state with data from packet."""
@@ -49,6 +54,7 @@ class StreamingClientProtocol(Protocol):
     def dataReceived(self, data):
         """parse received data into packets."""
         _LOGGER.debug(hexdump(data))
+        self.resetTimeout()
         self.data += data
         try:
             packet = Packet.packetize(self.data)
@@ -64,6 +70,10 @@ class StreamingClientProtocol(Protocol):
                 self.update_state(packet)
             db.save_frame(packet)
             self.data = self.data[len(packet):]
+
+    def timeoutConnection(self):
+        self.transport.write(POLL_REQUEST)
+        self.setTimeout(1)
 
 class StreamingClientFactory(ClientFactory):
     """streaming client protocol factory."""
