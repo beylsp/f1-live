@@ -24,10 +24,11 @@ class StreamingClientProtocol(Protocol, TimeoutMixin):
 
     def init_state(self, packet):
         """initialize state with data from key frame packets."""
+        key_frame_id = '{0:0>5d}'.format(packet.key_frame_id)
         defer = Deferred()
-        defer.addCallback(self.keyframeReceived)
-        http.get_async(defer, 'http://{0}/keyframe_{1:0>5d}.bin'
-                        .format(http.F1_LIVE_SERVER, packet.key_frame_id))
+        defer.addCallback(self.keyframeReceived, key_frame_id)
+        http.get_async(defer, 'http://{0}/keyframe_{1}.bin'
+                        .format(http.F1_LIVE_SERVER, key_frame_id))
         # start polling if no activity after 1 second
         self.setTimeout(1)
 
@@ -35,9 +36,10 @@ class StreamingClientProtocol(Protocol, TimeoutMixin):
         """update state with data from packet."""
         pass
 
-    def keyframeReceived(self, keyframe):
+    def keyframeReceived(self, keyframe, id):
         """parse received key frame into packets; a key frame represents
            the current state."""
+        db.save_key_frame(keyframe, id)
         offset = 0
         totlen = len(keyframe)
         while offset < totlen:
@@ -48,7 +50,7 @@ class StreamingClientProtocol(Protocol, TimeoutMixin):
                 offset += 2
             else:
                 self.update_state(packet)
-                db.save_frame(packet)
+                db.save_packet(packet)
                 offset += len(packet)
 
     def dataReceived(self, data):
@@ -68,7 +70,7 @@ class StreamingClientProtocol(Protocol, TimeoutMixin):
                 self.init_state(packet)
             else:
                 self.update_state(packet)
-            db.save_frame(packet)
+            db.save_packet(packet)
             self.data = self.data[len(packet):]
 
     def timeoutConnection(self):
