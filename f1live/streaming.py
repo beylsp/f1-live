@@ -9,7 +9,7 @@ from twisted.internet.protocol import Protocol
 from twisted.protocols.policies import TimeoutMixin
 from twisted.internet.protocol import ClientFactory
 from twisted.internet.defer import Deferred
-from pytools.dump import hexdump
+from tools.dump import hexdump
 
 __all__ = ['StreamingClientFactory']
 
