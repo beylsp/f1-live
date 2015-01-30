@@ -36,10 +36,10 @@ class StreamingClientProtocol(Protocol, TimeoutMixin):
         """update state with data from packet."""
         pass
 
-    def keyframeReceived(self, keyframe, id):
+    def keyframeReceived(self, keyframe, key_frame_id):
         """parse received key frame into packets; a key frame represents
            the current state."""
-        db.save_key_frame(keyframe, id)
+        db.save_key_frame(keyframe, key_frame_id)
         offset = 0
         totlen = len(keyframe)
         while offset < totlen:
