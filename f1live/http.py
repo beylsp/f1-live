@@ -3,6 +3,7 @@ Simple HTTP requests library.
 """
 import logging
 import socket
+import httplib
 from httplib2 import Http
 from httplib2 import ServerNotFoundError
 from urllib import urlencode
@@ -13,7 +14,7 @@ from twisted.web.client import Agent
 from twisted.web.client import FileBodyProducer
 from twisted.internet.protocol import Protocol
 
-__all__ = ['get', 'get_async', 'post', 'post_async']
+__all__ = ['get', 'get_async', 'post', 'post_async', 'request', 'request_async']
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ class ConnectionError(Exception):
     pass
 
 def request(method, url,
+        encode=urlencode,
     	params=None,
 	data=None,
         headers=None):
@@ -32,7 +34,7 @@ def request(method, url,
         if params:
             url = "{0}?{1}".format(url, urlencode(params))
         if data:
-            data = urlencode(data)
+            data = encode(data)
         _LOGGER.debug("[{0}] {1}".format(method.upper(), url))
         response, content = Http().request(url, method.upper(),
                                      data, headers)
@@ -41,6 +43,7 @@ def request(method, url,
     return Response(response, content)
 
 def request_async(defer, method, url,
+             encode=urlencode,
              params=None,
              data=None,
              headers=None):
@@ -48,7 +51,7 @@ def request_async(defer, method, url,
     if params:
         url = "{0}?{1}".format(url, urlencode(params))
     if data:
-        data = FileBodyProducer(StringIO(urlencode(data)))
+        data = FileBodyProducer(StringIO(encode(data)))
     _LOGGER.debug("[async {0}] {1}".format(method.upper(), url))
     _defer = Agent(reactor).request(method.upper(), url, headers, data)
     _defer.addCallback(on_http_response, defer)
@@ -124,6 +127,27 @@ class Response(object):
         else:
             for key, val in BaseCookie(set_cookie).items():
                 self.cookies[key] = val.value
+
+    @property
+    def ok(self):
+        """True if http response code is 200."""
+        if self.status_code == httplib.OK: # 200
+            return True
+        return False
+
+    @property
+    def found(self):
+        """True if http response code is 302."""
+        if self.status_code == httplib.FOUND: # 302
+            return True
+        return False
+
+    @property
+    def bad(self):
+        """True if http response code is >=400 and <=600."""
+        if 400 <= self.status_code <= 600:
+            return True
+        return False
 
     def get_status_code(self):
         """
