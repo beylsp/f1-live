@@ -3,7 +3,6 @@ F1 live timing client.
 """
 import logging
 import sys
-import httplib
 import config
 import http
 import streaming
@@ -23,7 +22,7 @@ def login(credentials):
                   data={'email': email, 'password': password},
                   headers={'User-Agent': __name__,
                            'Content-Type': 'application/x-www-form-urlencoded'})
-    if response.get_status_code() != httplib.FOUND: # 302
+    if not response.found: # 302
         raise LoginError("Login failed!")
     return response.get_cookie('USER')
 
