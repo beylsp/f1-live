@@ -13,6 +13,7 @@ log = logging.getLogger(__name__)
 CONFIG_FILE = '.f1rc'
 EMAIL = 'email'
 PASSWORD = 'password'
+FIREBASE = 'firebase'
 
 def get_credentials():
     """
@@ -67,4 +68,17 @@ def hint():
           "do so now by filling out the registration form at the URL:"
     print "http://www.formula1.com/reg/registration"
     print
+
+def get_firebase():
+    """
+    Retrieve firebase reference from .f1rc file.
+
+    @return: firebase URL reference.
+    @rtype: C{string}.
+    """
+    try:
+        config = dict(line.strip().split('=', 1) for line in open(CONFIG_FILE))
+        return config[FIREBASE]
+    except (IOError, ValueError):
+        return None
 
