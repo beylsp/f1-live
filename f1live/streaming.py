@@ -114,7 +114,7 @@ class StreamingClientFactory(ClientFactory):
         log.info('Connection failed. Reason: {0}'.format(reason))
 
     def comment_finished(self, comment):
-        """push full to firebase reference."""
+        """push full comment to firebase reference."""
         if self.firebase:
             self.firebase.push(comment)
 
