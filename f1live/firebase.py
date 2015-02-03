@@ -10,7 +10,7 @@ import os
 
 __all__ = ['Firebase']
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 class Firebase(object):
     """Firebase reference object."""
