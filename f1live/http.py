@@ -16,7 +16,7 @@ from twisted.internet.protocol import Protocol
 
 __all__ = ['get', 'get_async', 'post', 'post_async', 'request', 'request_async']
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 F1_LIVE_SERVER = 'live-timing.formula1.com'
 
@@ -35,7 +35,7 @@ def request(method, url,
             url = "{0}?{1}".format(url, urlencode(params))
         if data:
             data = encode(data)
-        _LOGGER.debug("[{0}] {1}".format(method.upper(), url))
+        log.debug("[{0}] {1}".format(method.upper(), url))
         response, content = Http().request(url, method.upper(),
                                      data, headers)
     except (ServerNotFoundError, socket.error) as err:
@@ -52,7 +52,7 @@ def request_async(defer, method, url,
         url = "{0}?{1}".format(url, urlencode(params))
     if data:
         data = FileBodyProducer(StringIO(encode(data)))
-    _LOGGER.debug("[async {0}] {1}".format(method.upper(), url))
+    log.debug("[async {0}] {1}".format(method.upper(), url))
     _defer = Agent(reactor).request(method.upper(), url, headers, data)
     _defer.addCallback(on_http_response, defer)
 

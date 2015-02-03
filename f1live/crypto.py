@@ -7,7 +7,7 @@ import struct
 
 __all__ = ['Crypto']
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 CRYPTO_SEED = 0x55555555
 

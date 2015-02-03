@@ -5,7 +5,7 @@ import logging
 
 __all__ = ['save_key_frame', 'save_packet']
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 def save_key_frame(frame, key_frame_id):
     """

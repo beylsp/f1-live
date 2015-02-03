@@ -9,7 +9,7 @@ import streaming
 from crypto import Crypto
 from twisted.internet import reactor
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 class LoginError(Exception):
     """login error exception."""
