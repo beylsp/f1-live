@@ -5,6 +5,7 @@ import logging
 import Packet
 import http
 import db
+import firebase
 from twisted.internet.protocol import Protocol
 from twisted.protocols.policies import TimeoutMixin
 from twisted.internet.protocol import ClientFactory
@@ -13,14 +14,18 @@ from tools.dump import hexdump
 
 __all__ = ['StreamingClientFactory']
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 POLL_REQUEST = '\x10'
 
 class StreamingClientProtocol(Protocol, TimeoutMixin):
     """streaming client protocol implementation."""
-    def __init__(self):
+    def __init__(self, factory):
+        self.factory = factory
         self.data = ''
+
+        # high-level protocol properties
+        self.comment = ''
 
     def init_state(self, packet):
         """initialize state with data from key frame packets."""
@@ -34,7 +39,15 @@ class StreamingClientProtocol(Protocol, TimeoutMixin):
 
     def update_state(self, packet):
         """update state with data from packet."""
-        pass
+        if type(packet) == Packet.SystemCommentary:
+            self.comment += packet.comment
+            if packet.last:
+                self.comment_received(self.comment)
+                self.comment = ''
+
+    def comment_received(self, comment):
+        """callback when complete comment is received."""
+        self.factory.comment_finished(comment)
 
     def keyframeReceived(self, keyframe, key_frame_id):
         """parse received key frame into packets; a key frame represents
@@ -46,7 +59,7 @@ class StreamingClientProtocol(Protocol, TimeoutMixin):
             try:
                 packet = Packet.packetize(keyframe[offset:])
             except Packet.UnknownPacketType as err:
-                _LOGGER.debug(str(err))
+                log.debug(str(err))
                 offset += 2
             else:
                 self.update_state(packet)
@@ -55,7 +68,7 @@ class StreamingClientProtocol(Protocol, TimeoutMixin):
 
     def dataReceived(self, data):
         """parse received data into packets."""
-        _LOGGER.debug(hexdump(data))
+        log.debug(hexdump(data))
         self.resetTimeout()
         self.data += data
         try:
@@ -63,7 +76,7 @@ class StreamingClientProtocol(Protocol, TimeoutMixin):
         except Packet.NeedMoreData:
             return
         except Packet.UnknownPacketType as err:
-            _LOGGER.debug(str(err))
+            log.debug(str(err))
             self.data = self.data[2:]
         else:
             if type(packet) == Packet.SystemKeyFrame:
@@ -74,21 +87,33 @@ class StreamingClientProtocol(Protocol, TimeoutMixin):
             self.data = self.data[len(packet):]
 
     def timeoutConnection(self):
+        """poll for more data from server."""
         self.transport.write(POLL_REQUEST)
         self.setTimeout(1)
 
 class StreamingClientFactory(ClientFactory):
     """streaming client protocol factory."""
+    def __init__(self):
+        self.firebase = None
+        url = config.get_firebase()
+        if url:
+            self.firebase = firebase.Firebase(url)
+
     def startedConnecting(self, connector):
-        _LOGGER.debug('Started connecting...')
+        log.debug('Started connecting...')
 
     def buildProtocol(self, addr):
-        _LOGGER.info('Connected to {0}'.format(addr))
-        return StreamingClientProtocol()
+        log.info('Connected to {0}'.format(addr))
+        return StreamingClientProtocol(self)
 
     def clientConnectionLost(self, connector, reason):
-        _LOGGER.info('Connection lost. Reason: {0}'.format(reason))
+        log.info('Connection lost. Reason: {0}'.format(reason))
 
     def clientConnectionFailed(self, connector, reason):
-        _LOGGER.info('Connection failed. Reason: {0}'.format(reason))
+        log.info('Connection failed. Reason: {0}'.format(reason))
+
+    def comment_finished(self, comment):
+        """push full to firebase reference."""
+        if self.firebase:
+            self.firebase.push(comment)
 
