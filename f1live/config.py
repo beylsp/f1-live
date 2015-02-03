@@ -4,11 +4,11 @@ Config file parsing and creation.
 import logging
 import sys
 import os
-from pytools.cli import ask
+from tools.cli import ask
 
 __all__ = ['get_credentials', 'remove_credentials']
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 CONFIG_FILE = '.f1rc'
 EMAIL = 'email'
