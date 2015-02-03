@@ -6,6 +6,7 @@ import Packet
 import http
 import db
 import firebase
+import config
 from twisted.internet.protocol import Protocol
 from twisted.protocols.policies import TimeoutMixin
 from twisted.internet.protocol import ClientFactory
