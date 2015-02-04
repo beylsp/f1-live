@@ -6,7 +6,7 @@ import sys
 import os
 from tools.cli import ask
 
-__all__ = ['get_credentials', 'remove_credentials']
+__all__ = ['get_credentials', 'remove_credentials', 'get_firebase']
 
 log = logging.getLogger(__name__)
 
