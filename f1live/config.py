@@ -73,7 +73,7 @@ def get_firebase():
     """
     Retrieve firebase reference from .f1rc file.
 
-    @return: firebase URL reference.
+    @return: firebase URL reference or None if not specified.
     @rtype: C{string}.
     """
     try:
