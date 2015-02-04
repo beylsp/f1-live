@@ -63,6 +63,12 @@ class StreamingClientProtocol(Protocol, TimeoutMixin):
                 log.debug(str(err))
                 offset += 2
             else:
+                if type(packet) == Packet.SystemEvent:
+                    try:
+                        self.factory.create_firebase_ref(
+                                        packet.get_event_type())
+                    except Packet.UnknownEventType as err:
+                        log.info(str(err))
                 self.update_state(packet)
                 db.save_packet(packet)
                 offset += len(packet)
@@ -80,12 +86,16 @@ class StreamingClientProtocol(Protocol, TimeoutMixin):
             log.debug(str(err))
             self.data = self.data[2:]
         else:
-            if type(packet) == Packet.SystemKeyFrame:
-                self.init_state(packet)
-            else:
-                self.update_state(packet)
+            self.handle_packet(packet)
             db.save_packet(packet)
             self.data = self.data[len(packet):]
+
+    def handle_packet(self, packet):
+        """handle received packet."""
+        if type(packet) == Packet.SystemKeyFrame:
+            self.init_state(packet)
+        else:
+            self.update_state(packet)
 
     def timeoutConnection(self):
         """poll for more data from server."""
@@ -95,10 +105,7 @@ class StreamingClientProtocol(Protocol, TimeoutMixin):
 class StreamingClientFactory(ClientFactory):
     """streaming client protocol factory."""
     def __init__(self):
-        self.firebase = None
-        url = config.get_firebase()
-        if url:
-            self.firebase = firebase.Firebase(url)
+        self.comment_ref = None
 
     def startedConnecting(self, connector):
         log.debug('Started connecting...')
@@ -115,6 +122,13 @@ class StreamingClientFactory(ClientFactory):
 
     def comment_finished(self, comment):
         """push full comment to firebase reference."""
-        if self.firebase:
-            self.firebase.push(comment)
+        if self.comment_ref:
+            self.comment_ref.push(comment)
+
+    def create_firebase_ref(self, event):
+        """create our firebase references."""
+        url = config.get_firebase()
+        if url:
+            root = firebase.Firebase(url)
+            self.comment_ref = root.child('{0}/commentary'.format(event))
 
